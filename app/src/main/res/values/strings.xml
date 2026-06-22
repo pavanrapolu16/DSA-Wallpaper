@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DSA Wallpaper</string>
+    <string name="wallpaper_description">Displays challenging computer science problems directly on your lock screen/home screen. Double tap to toggle code solution.</string>
+</resources>

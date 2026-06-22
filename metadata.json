@@ -1,0 +1,6 @@
+{
+  "name": "DSA Wallpaper",
+  "description": "Displays random Data Structures and Algorithms questions on your lock screen and home screen, changing automatically on every wake.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
