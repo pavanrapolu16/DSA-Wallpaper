@@ -67,6 +67,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun sendRefreshBroadcast(context: Context) {
+    try {
+        val intent = Intent("com.example.REFRESH_DSA_WALLPAPER").apply {
+            setPackage(context.packageName)
+        }
+        context.sendBroadcast(intent)
+    } catch (e: Exception) {
+        android.util.Log.e("MainActivity", "Error sending refresh broadcast", e)
+    }
+}
+
 @Composable
 fun WallpaperDashboard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -172,7 +183,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
             val nextQ = DsaQuestionRepository.getRandomQuestion(currentDifficultyFilter, currentPlatformFilter, currentCategoryFilter)
             currentQuestionId = nextQ.id
             prefs.edit().putString("current_question_id", nextQ.id).apply()
-            context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+            sendRefreshBroadcast(context)
             isSyncing = false
         }
     }
@@ -351,8 +362,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                     prefs.edit().putString("current_question_id", nextQ.id).apply()
                     Toast.makeText(context, "Cycling next coding question", Toast.LENGTH_SHORT).show()
                     // Redraw active wallpaper service immediately
-                    val intent = Intent("com.example.REFRESH_DSA_WALLPAPER")
-                    context.sendBroadcast(intent)
+                    sendRefreshBroadcast(context)
                 },
                 modifier = Modifier
                     .weight(1f)
@@ -449,7 +459,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                                     .putString("wallpaper_theme", theme.key)
                                     .apply()
                                 // Broadcast intent to update active live wallpaper engine immediately
-                                context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                                sendRefreshBroadcast(context)
                             }
                             .testTag("theme_chip_${theme.key.lowercase()}"),
                         contentAlignment = Alignment.Center
@@ -502,7 +512,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                             currentQuestionId = nextQ.id
                             previewShowSolution = false
                             prefs.edit().putString("current_question_id", nextQ.id).apply()
-                            context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                            sendRefreshBroadcast(context)
                         },
                         modifier = Modifier
                             .weight(1f)
@@ -599,7 +609,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                                     .clickable {
                                         clockClearance = option
                                         prefs.edit().putString("clock_clearance", option).apply()
-                                        context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                                        sendRefreshBroadcast(context)
                                     }
                                     .padding(vertical = 8.dp),
                                 contentAlignment = Alignment.Center
@@ -645,7 +655,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                                     .clickable {
                                         textFontScale = option
                                         prefs.edit().putString("text_font_scale", option).apply()
-                                        context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                                        sendRefreshBroadcast(context)
                                     }
                                     .padding(vertical = 6.dp),
                                 contentAlignment = Alignment.Center
@@ -687,7 +697,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                                     .clickable {
                                         cardTransparency = option
                                         prefs.edit().putString("card_transparency", option).apply()
-                                        context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                                        sendRefreshBroadcast(context)
                                     }
                                     .padding(vertical = 6.dp),
                                 contentAlignment = Alignment.Center
@@ -717,7 +727,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                         .clickable {
                             showComplexityTags = !showComplexityTags
                             prefs.edit().putBoolean("show_complexity_tags", showComplexityTags).apply()
-                            context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                            sendRefreshBroadcast(context)
                         }
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -732,7 +742,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                         onCheckedChange = { value ->
                             showComplexityTags = value
                             prefs.edit().putBoolean("show_complexity_tags", value).apply()
-                            context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                            sendRefreshBroadcast(context)
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color(0xFF0F111A),
@@ -831,7 +841,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                                 val nextQ = DsaQuestionRepository.getRandomQuestion(currentDifficultyFilter, platKey, currentCategoryFilter)
                                 currentQuestionId = nextQ.id
                                 prefs.edit().putString("current_question_id", nextQ.id).apply()
-                                context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                                sendRefreshBroadcast(context)
                             }
                             .padding(vertical = 12.dp, horizontal = 16.dp),
                         contentAlignment = Alignment.Center
@@ -899,7 +909,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                                 val nextQ = DsaQuestionRepository.getRandomQuestion(currentDifficultyFilter, currentPlatformFilter, catKey)
                                 currentQuestionId = nextQ.id
                                 prefs.edit().putString("current_question_id", nextQ.id).apply()
-                                context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                                sendRefreshBroadcast(context)
                             }
                             .padding(horizontal = 14.dp, vertical = 8.dp)
                     ) {
@@ -953,7 +963,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                                 val nextQ = DsaQuestionRepository.getRandomQuestion(level, currentPlatformFilter, currentCategoryFilter)
                                 currentQuestionId = nextQ.id
                                 prefs.edit().putString("current_question_id", nextQ.id).apply()
-                                context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                                sendRefreshBroadcast(context)
                             }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
@@ -1083,10 +1093,10 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    currentQuestionId = q.id
-                                    previewShowSolution = false
-                                    prefs.edit().putString("current_question_id", q.id).apply()
-                                    context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
+                                     currentQuestionId = q.id
+                                     previewShowSolution = false
+                                     prefs.edit().putString("current_question_id", q.id).apply()
+                                     sendRefreshBroadcast(context)
                                     Toast.makeText(context, "Locked active wallpaper question to ${q.title}", Toast.LENGTH_SHORT).show()
                                 },
                             colors = CardDefaults.cardColors(
