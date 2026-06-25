@@ -169,6 +169,10 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
             syncLogs = syncLogs + "[LOCAL ENGINE] Sync completes. 500 optimized high-quality DSA questions compiled into database!"
             kotlinx.coroutines.delay(300)
             syncLogs = syncLogs + "[SUCCESS] Synchronization complete! All platforms are fully up to date."
+            val nextQ = DsaQuestionRepository.getRandomQuestion(currentDifficultyFilter, currentPlatformFilter, currentCategoryFilter)
+            currentQuestionId = nextQ.id
+            prefs.edit().putString("current_question_id", nextQ.id).apply()
+            context.sendBroadcast(Intent("com.example.REFRESH_DSA_WALLPAPER"))
             isSyncing = false
         }
     }
@@ -1262,7 +1266,7 @@ fun WallpaperPreviewCard(
         else -> 1.0f
     }
 
-    val shouldShowCard = isPreviewLocked
+    val shouldShowCard = true
 
     Box(
         modifier = Modifier
@@ -1351,47 +1355,77 @@ fun WallpaperPreviewCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // 1. Virtual mock system lockscreen clock, clearing appropriate space
-                val clearanceHeight = when (clockClearance) {
-                    "LOW" -> 46.dp
-                    "MEDIUM" -> 92.dp
-                    "HIGH" -> 138.dp
-                    else -> 92.dp
-                }
+                // 1. Top Section: Lock Screen Clock or Home Screen Search Bar mockup
+                if (isPreviewLocked) {
+                    val clearanceHeight = when (clockClearance) {
+                        "LOW" -> 46.dp
+                        "MEDIUM" -> 92.dp
+                        "HIGH" -> 138.dp
+                        else -> 92.dp
+                    }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(clearanceHeight),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(clearanceHeight),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "09:41",
-                            color = themePack.textColor.copy(alpha = 0.85f),
-                            fontWeight = FontWeight.Light,
-                            fontSize = when (clockClearance) {
-                                "LOW" -> 32.sp
-                                "MEDIUM" -> 44.sp
-                                "HIGH" -> 56.sp
-                                else -> 44.sp
-                            },
-                            letterSpacing = (-0.5).sp
-                        )
-                        Text(
-                            text = "Sunday, June 21",
-                            color = themePack.subtextColor.copy(alpha = 0.55f),
-                            fontSize = when (clockClearance) {
-                                "LOW" -> 10.sp
-                                "MEDIUM" -> 12.sp
-                                "HIGH" -> 14.sp
-                                else -> 12.sp
-                            },
-                            fontWeight = FontWeight.Medium
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = "09:41",
+                                color = themePack.textColor.copy(alpha = 0.85f),
+                                fontWeight = FontWeight.Light,
+                                fontSize = when (clockClearance) {
+                                    "LOW" -> 32.sp
+                                    "MEDIUM" -> 44.sp
+                                    "HIGH" -> 56.sp
+                                    else -> 44.sp
+                                },
+                                letterSpacing = (-0.5).sp
+                            )
+                            Text(
+                                text = "Sunday, June 21",
+                                color = themePack.subtextColor.copy(alpha = 0.55f),
+                                fontSize = when (clockClearance) {
+                                    "LOW" -> 10.sp
+                                    "MEDIUM" -> 12.sp
+                                    "HIGH" -> 14.sp
+                                    else -> 12.sp
+                                },
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 18.dp, start = 8.dp, end = 8.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0x22FFFFFF))
+                            .border(1.dp, Color(0x11FFFFFF), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Search apps or web...",
+                                color = themePack.textColor.copy(alpha = 0.4f),
+                                fontSize = 11.sp
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search icon",
+                                tint = themePack.textColor.copy(alpha = 0.4f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
 
@@ -1562,148 +1596,24 @@ fun WallpaperPreviewCard(
                     }
                 }
 
-                // 3. Interactions & Signature Watermark block at bottom
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "designed by Pavan Rapolu",
-                        color = themePack.textColor.copy(alpha = 0.22f),
-                        fontSize = 9.5.sp,
-                        fontFamily = FontFamily.Serif,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                    )
-                }
-            }
-        } else {
-            // Clean Elegant Mode mockup showing screen details with zero card clutter
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
+                // 3. Bottom Section: Lock Screen Watermark or Home Screen App Dock
                 if (isPreviewLocked) {
-                    // Lock Screen Mock: System clock & clear background
-                    val clearanceHeight = when (clockClearance) {
-                        "LOW" -> 46.dp
-                        "MEDIUM" -> 92.dp
-                        "HIGH" -> 138.dp
-                        else -> 92.dp
-                    }
-
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(clearanceHeight),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            Text(
-                                text = "09:41",
-                                color = themePack.textColor.copy(alpha = 0.85f),
-                                fontWeight = FontWeight.Light,
-                                fontSize = 44.sp,
-                                letterSpacing = (-0.5).sp
-                            )
-                            Text(
-                                text = "Sunday, June 21",
-                                color = themePack.subtextColor.copy(alpha = 0.55f),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-
-                    // Centered beautiful mock lock status info
-                    Column(
-                        modifier = Modifier.weight(1f),
+                            .padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Hidden on Lock Screen",
-                            tint = themePack.accentHex.copy(alpha = 0.25f),
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "DSA card is hidden on active lock screen",
-                            color = themePack.subtextColor.copy(alpha = 0.4f),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
+                            text = "designed by Pavan Rapolu",
+                            color = themePack.textColor.copy(alpha = 0.22f),
+                            fontSize = 9.5.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                         )
                     }
-
-                    // Static brand watermark at bottom
-                    Text(
-                        text = "designed by Pavan Rapolu",
-                        color = themePack.textColor.copy(alpha = 0.22f),
-                        fontSize = 9.5.sp,
-                        fontFamily = FontFamily.Serif,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
                 } else {
-                    // Home Screen Mock: Clean layout with search bar & app icon slots
-                    // Search bar widget mockup
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 18.dp, start = 8.dp, end = 8.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0x22FFFFFF))
-                            .border(1.dp, Color(0x11FFFFFF), RoundedCornerShape(12.dp))
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Search apps or web...",
-                                color = themePack.textColor.copy(alpha = 0.4f),
-                                fontSize = 11.sp
-                            )
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search icon",
-                                tint = themePack.textColor.copy(alpha = 0.4f),
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    }
-
-                    // Middle area "Hidden on Home" metadata
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Home,
-                            contentDescription = "Hidden on Home Screen",
-                            tint = themePack.accentHex.copy(alpha = 0.25f),
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "DSA card is hidden on home launcher screen",
-                            color = themePack.subtextColor.copy(alpha = 0.4f),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    // Mock app dock layout
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

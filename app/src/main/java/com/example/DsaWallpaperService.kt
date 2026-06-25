@@ -78,7 +78,11 @@ class DsaWallpaperService : WallpaperService() {
             addAction(Intent.ACTION_USER_PRESENT)
             addAction("com.example.REFRESH_DSA_WALLPAPER")
         }
-        registerReceiver(serviceReceiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(serviceReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(serviceReceiver, filter)
+        }
     }
 
     override fun onDestroy() {
@@ -137,6 +141,10 @@ class DsaWallpaperService : WallpaperService() {
 
         // GestureDetector for clicks/taps to show solution
         private val gestureDetector = GestureDetector(this@DsaWallpaperService, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean {
+                return true
+            }
+
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 showSolution = !showSolution
                 prefs.edit().putBoolean("show_solution", showSolution).apply()
@@ -217,7 +225,7 @@ class DsaWallpaperService : WallpaperService() {
         }
 
         fun triggerRedraw() {
-            if (visible) {
+            if (visible || isVisible || isPreview) {
                 handler.post { drawFrame() }
             }
         }
@@ -244,7 +252,7 @@ class DsaWallpaperService : WallpaperService() {
         }
 
         private fun drawWallpaper(canvas: Canvas) {
-            val question = currentQuestion ?: return
+            if (width <= 0 || height <= 0) return
 
             // 1. Theme Configuration
             val themeStr = prefs.getString("wallpaper_theme", "COSMIC_SLATE") ?: "COSMIC_SLATE"
@@ -254,9 +262,23 @@ class DsaWallpaperService : WallpaperService() {
             // 2. Draw Background Layout (Gradient or Ambient design)
             drawBackgroundTheme(canvas, themeStr, bgColor, accentColor)
 
+            var question = currentQuestion
+            if (question == null) {
+                loadState()
+                question = currentQuestion
+            }
+            if (question == null) {
+                val loadingPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                    textAlign = Paint.Align.CENTER
+                    textSize = spToPx(15f)
+                    color = Color.parseColor(textColor)
+                }
+                canvas.drawText("Preparing DSA question card...", width / 2f, height / 2f, loadingPaint)
+                return
+            }
+
             // 3. Layout Bounds & Math
-            if (isDeviceLocked) {
-                val padding = dpToPx(24f)
+            val padding = dpToPx(24f)
             val startX = padding
             val endX = width - padding
             val contentWidth = endX - startX
@@ -532,17 +554,6 @@ class DsaWallpaperService : WallpaperService() {
                 alpha = 60 // subtle watermark transparency
             }
             canvas.drawText("designed by Pavan Rapolu", width / 2f, topOffset + cardHeightMax + dpToPx(28f), watermarkPaint)
-            } else {
-                // Device is unlocked: show clean ambient screen with subtle brand watermark at the bottom of launcher
-                val watermarkPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-                    textAlign = Paint.Align.CENTER
-                    textSize = spToPx(11f)
-                    typeface = Typeface.create(Typeface.SERIF, Typeface.ITALIC)
-                    color = Color.parseColor(textColor)
-                    alpha = 45 // subtle watermark transparency
-                }
-                canvas.drawText("designed by Pavan Rapolu", width / 2f, height - dpToPx(40f), watermarkPaint)
-            }
         }
 
         private fun drawComplexityPill(canvas: Canvas, label: String, value: String, x: Float, y: Float, accentHex: String, textHex: String) {
