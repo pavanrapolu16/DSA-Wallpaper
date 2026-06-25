@@ -635,13 +635,13 @@ object DsaQuestionRepository {
                     title = title,
                     category = category,
                     difficulty = difficulty,
-                    description = "Comprehensive SDE interview card covering: ${template.description}. This variation focuses on extreme bounds testing, resource efficiency, and optimal ${subtopic} layout requirements.",
-                    input = "Input parameter array: ${template.input}",
-                    output = "Expected optimal output: ${template.output}",
+                    description = template.description,
+                    input = template.input,
+                    output = template.output,
                     timeComplexity = template.timeComplexity,
                     spaceComplexity = template.spaceComplexity,
-                    hint = "Remember optimal heuristic logic: ${template.hint}",
-                    solutionCode = template.solutionCode + " // Optimized Kotlin SDE Pattern",
+                    hint = template.hint,
+                    solutionCode = template.solutionCode,
                     platform = platform
                 )
             )
@@ -669,18 +669,44 @@ object DsaQuestionRepository {
     }
 
     fun getRandomQuestion(filterDifficulty: String = "ALL", filterPlatform: String = "ALL", filterCategory: String = "ALL"): DsaQuestion {
+        // Step 1: Try strict match on all selected criteria
         val filtered = questions.filter { q ->
             val matchesDifficulty = filterDifficulty == "ALL" || q.difficulty.equals(filterDifficulty, ignoreCase = true)
             val matchesPlatform = filterPlatform == "ALL" || q.platform.equals(filterPlatform, ignoreCase = true)
             val matchesCategory = filterCategory == "ALL" || q.category.contains(filterCategory, ignoreCase = true) || filterCategory.contains(q.category, ignoreCase = true)
             matchesDifficulty && matchesPlatform && matchesCategory
         }
-        val targetList = if (filtered.isEmpty()) {
-            val diffFiltered = if (filterDifficulty == "ALL") questions else questions.filter { it.difficulty.equals(filterDifficulty, ignoreCase = true) }
-            if (diffFiltered.isEmpty()) questions else diffFiltered
-        } else {
-            filtered
+        if (filtered.isNotEmpty()) {
+            return filtered.random()
         }
-        return targetList.random()
+
+        // Step 2: Fallback to (Platform + Category) disregarding difficulty
+        val platformAndCategory = questions.filter { q ->
+            val matchesPlatform = filterPlatform == "ALL" || q.platform.equals(filterPlatform, ignoreCase = true)
+            val matchesCategory = filterCategory == "ALL" || q.category.contains(filterCategory, ignoreCase = true) || filterCategory.contains(q.category, ignoreCase = true)
+            matchesPlatform && matchesCategory
+        }
+        if (platformAndCategory.isNotEmpty()) {
+            return platformAndCategory.random()
+        }
+
+        // Step 3: Fallback to matching just the selected Platform (to strictly preserve platform)
+        val platformOnly = questions.filter { q ->
+            filterPlatform == "ALL" || q.platform.equals(filterPlatform, ignoreCase = true)
+        }
+        if (platformOnly.isNotEmpty()) {
+            return platformOnly.random()
+        }
+
+        // Step 4: Fallback to difficulty only
+        val difficultyOnly = questions.filter { q ->
+            filterDifficulty == "ALL" || q.difficulty.equals(filterDifficulty, ignoreCase = true)
+        }
+        if (difficultyOnly.isNotEmpty()) {
+            return difficultyOnly.random()
+        }
+
+        // Final fallback: any question
+        return questions.random()
     }
 }

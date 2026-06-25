@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
@@ -136,13 +137,6 @@ class DsaWallpaperService : WallpaperService() {
 
         // GestureDetector for clicks/taps to show solution
         private val gestureDetector = GestureDetector(this@DsaWallpaperService, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onDoubleTap(e: MotionEvent): Boolean {
-                showSolution = !showSolution
-                prefs.edit().putBoolean("show_solution", showSolution).apply()
-                triggerRedraw()
-                return true
-            }
-
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 showSolution = !showSolution
                 prefs.edit().putBoolean("show_solution", showSolution).apply()
@@ -151,14 +145,27 @@ class DsaWallpaperService : WallpaperService() {
             }
         })
 
+        private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "current_question_id" || key == "wallpaper_theme" || 
+                key == "filter_difficulty" || key == "filter_platform" || 
+                key == "filter_category" || key == "clock_clearance" || 
+                key == "text_font_scale" || key == "show_complexity_tags" || 
+                key == "card_transparency" || key == "show_solution") {
+                loadState()
+                triggerRedraw()
+            }
+        }
+
         override fun onCreate(surfaceHolder: SurfaceHolder) {
             super.onCreate(surfaceHolder)
+            prefs.registerOnSharedPreferenceChangeListener(prefListener)
             loadState()
             setTouchEventsEnabled(true)
         }
 
         override fun onDestroy() {
             super.onDestroy()
+            prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
             activeEngines.remove(this)
         }
 
@@ -248,7 +255,8 @@ class DsaWallpaperService : WallpaperService() {
             drawBackgroundTheme(canvas, themeStr, bgColor, accentColor)
 
             // 3. Layout Bounds & Math
-            val padding = dpToPx(24f)
+            if (isDeviceLocked) {
+                val padding = dpToPx(24f)
             val startX = padding
             val endX = width - padding
             val contentWidth = endX - startX
@@ -524,6 +532,17 @@ class DsaWallpaperService : WallpaperService() {
                 alpha = 60 // subtle watermark transparency
             }
             canvas.drawText("designed by Pavan Rapolu", width / 2f, topOffset + cardHeightMax + dpToPx(28f), watermarkPaint)
+            } else {
+                // Device is unlocked: show clean ambient screen with subtle brand watermark at the bottom of launcher
+                val watermarkPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                    textAlign = Paint.Align.CENTER
+                    textSize = spToPx(11f)
+                    typeface = Typeface.create(Typeface.SERIF, Typeface.ITALIC)
+                    color = Color.parseColor(textColor)
+                    alpha = 45 // subtle watermark transparency
+                }
+                canvas.drawText("designed by Pavan Rapolu", width / 2f, height - dpToPx(40f), watermarkPaint)
+            }
         }
 
         private fun drawComplexityPill(canvas: Canvas, label: String, value: String, x: Float, y: Float, accentHex: String, textHex: String) {

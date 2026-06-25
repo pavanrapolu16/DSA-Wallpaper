@@ -97,6 +97,44 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
     // Helper to refresh data
     var questionRefreshTrigger by remember { mutableStateOf(0) }
 
+    DisposableEffect(prefs) {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                "current_question_id" -> {
+                    currentQuestionId = prefs.getString("current_question_id", "") ?: ""
+                }
+                "wallpaper_theme" -> {
+                    currentTheme = prefs.getString("wallpaper_theme", "COSMIC_SLATE") ?: "COSMIC_SLATE"
+                }
+                "filter_difficulty" -> {
+                    currentDifficultyFilter = prefs.getString("filter_difficulty", "ALL") ?: "ALL"
+                }
+                "filter_platform" -> {
+                    currentPlatformFilter = prefs.getString("filter_platform", "ALL") ?: "ALL"
+                }
+                "filter_category" -> {
+                    currentCategoryFilter = prefs.getString("filter_category", "ALL") ?: "ALL"
+                }
+                "clock_clearance" -> {
+                    clockClearance = prefs.getString("clock_clearance", "MEDIUM") ?: "MEDIUM"
+                }
+                "text_font_scale" -> {
+                    textFontScale = prefs.getString("text_font_scale", "STANDARD") ?: "STANDARD"
+                }
+                "show_complexity_tags" -> {
+                    showComplexityTags = prefs.getBoolean("show_complexity_tags", true)
+                }
+                "card_transparency" -> {
+                    cardTransparency = prefs.getString("card_transparency", "TRANSLUCENT") ?: "TRANSLUCENT"
+                }
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+
     // Fetch active question
     val activeQuestion = remember(currentQuestionId, questionRefreshTrigger) {
         val q = DsaQuestionRepository.questions.find { it.id == currentQuestionId }
@@ -303,7 +341,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
             // Pick next random question
             Button(
                 onClick = {
-                    val nextQ = DsaQuestionRepository.getRandomQuestion(currentDifficultyFilter)
+                    val nextQ = DsaQuestionRepository.getRandomQuestion(currentDifficultyFilter, currentPlatformFilter, currentCategoryFilter)
                     currentQuestionId = nextQ.id
                     previewShowSolution = false
                     prefs.edit().putString("current_question_id", nextQ.id).apply()
@@ -456,7 +494,7 @@ fun WallpaperDashboard(modifier: Modifier = Modifier) {
                             prefs.edit().putString("filter_difficulty", level).apply()
                             
                             // Immediately cycle question on filter adjustment
-                            val nextQ = DsaQuestionRepository.getRandomQuestion(level)
+                            val nextQ = DsaQuestionRepository.getRandomQuestion(level, currentPlatformFilter, currentCategoryFilter)
                             currentQuestionId = nextQ.id
                             previewShowSolution = false
                             prefs.edit().putString("current_question_id", nextQ.id).apply()
@@ -1224,7 +1262,7 @@ fun WallpaperPreviewCard(
         else -> 1.0f
     }
 
-    val shouldShowCard = true
+    val shouldShowCard = isPreviewLocked
 
     Box(
         modifier = Modifier
